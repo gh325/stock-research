@@ -58,25 +58,29 @@ def _score(features: pd.DataFrame, weights: dict[str, float]) -> pd.Series:
     return sum(features[f"{c}_score"] * weights[c] for c in COMPONENTS)
 
 
-def per_date_excess(features: pd.DataFrame, weights: dict[str, float],
-                    top_n: int = TOP_N) -> pd.Series:
+def per_date_excess(features: pd.DataFrame, weights: dict[str, float] | None,
+                    top_n: int = TOP_N, score: pd.Series | None = None) -> pd.Series:
     """
     For each date: mean forward return of the top-N picks minus the universe
     mean. Dates with fewer than MIN_TICKERS tickers are skipped, because their
     top N is most of the universe and the excess would be ~0 by construction.
+    Pass `score` (aligned to `features`) to rank by a structural variant
+    instead of the weighted sum.
     """
     counts = features.groupby("date")["ticker"].transform("nunique")
-    df = features[counts >= max(MIN_TICKERS, 2 * top_n)]
-    df = df.assign(_s=_score(df, weights))
+    keep   = counts >= max(MIN_TICKERS, 2 * top_n)
+    df = features[keep]
+    df = df.assign(_s=(score[keep] if score is not None else _score(df, weights)))
     top  = (df.sort_values("_s", ascending=False).groupby("date").head(top_n)
               .groupby("date")["fwd_ret"].mean())
     univ = df.groupby("date")["fwd_ret"].mean()
     return (top - univ).dropna()
 
 
-def evaluate(features: pd.DataFrame, weights: dict[str, float], top_n: int = TOP_N) -> dict:
+def evaluate(features: pd.DataFrame, weights: dict[str, float] | None, top_n: int = TOP_N,
+             score: pd.Series | None = None) -> dict:
     """Mean excess return (% per horizon), hit rate and t-stat over replay dates."""
-    ex = per_date_excess(features, weights, top_n)
+    ex = per_date_excess(features, weights, top_n, score)
     n  = len(ex)
     sd = float(ex.std(ddof=1)) if n > 1 else 0.0
     return {
@@ -212,6 +216,10 @@ def features_from_frames(frames: dict[str, pd.DataFrame], horizon: int = 10,
                 "date":   d,
                 "ticker": t,
                 **{f"{c}_score": tech[f"{c}_score"] for c in COMPONENTS},
+                # Raw fields for structural hypotheses (experiments.py)
+                "sma200_pct": (tech["last_price"] / tech["sma200"] - 1) * 100 if tech["sma200"] else 0.0,
+                "ret5d_pct":  tech["ret5d_pct"],
+                "week52_pos": tech["week52_pos"],
                 "fwd_ret": (float(close.iloc[pos + horizon]) / float(close.iloc[pos]) - 1) * 100,
             })
     return pd.DataFrame(rows)

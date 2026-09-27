@@ -17,6 +17,7 @@ Usage:
   python main.py evolve --watchlist ai_ecosystem     Self-improving loop: try weight changes,
                                                      keep only holdout-tested ones (--apply)
   python main.py journal backfill|grade|report       Grade the sector scan's predictions
+  python main.py experiment                          Test structural score changes (H1–H3)
   python main.py sectors                             Sector rotation scan (runs before
                                                      every run; skip with --skip-sector-scan)
   python main.py check-watchlist cyber               Health-check a watchlist (runs
@@ -833,6 +834,13 @@ def _build_parser() -> argparse.ArgumentParser:
     evo_p.add_argument("--apply", action="store_true",
                        help="Write params/scoring.json if, and only if, the verdict is PASS")
 
+    # experiment
+    ex_p = sub.add_parser("experiment", help="Test pre-registered structural changes to the score "
+                                             "(holdout-gated, must hold on 3 of 4 watchlists)")
+    ex_p.add_argument("--watchlists", default="ai_ecosystem,cyber,biotech,energy",
+                      help="Comma-separated watchlists (default: the 4 main lists)")
+    ex_p.add_argument("--horizon", type=int, default=10, help="Forward window in trading days (default 10)")
+
     # journal
     jr_p = sub.add_parser("journal", help="Research journal: grade the sector scan's predictions")
     jr_p.add_argument("action", choices=["backfill", "grade", "report"])
@@ -897,6 +905,10 @@ def main() -> None:
         import evolve
         evolve.run(args.watchlist, horizon=args.horizon, step=args.step,
                    iterations=args.iterations, seed=args.seed, do_apply=args.apply)
+    elif args.command == "experiment":
+        import experiments
+        experiments.run([w.strip() for w in args.watchlists.split(",") if w.strip()],
+                        horizon=args.horizon)
     elif args.command == "journal":
         import journal
         if args.action == "backfill":

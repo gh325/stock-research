@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Structural experiments** (`experiments.py`, `python main.py experiment`):
+  - Three pre-registered hypotheses, each compared with the current score on the evolve replay:
+    - H1: a stretch penalty above +25% over the 200 SMA.
+    - H2: momentum rebuilt from the 52-week position only.
+    - H3: the ranking inverted, as a control.
+  - PASS on a list needs both a train gain and a holdout gain with t ≥ 2. ADOPT needs a PASS on ≥ 3 of 4 lists.
+  - The replay now also stores `sma200_pct`, `ret5d_pct` and `week52_pos`. `evolve.evaluate` and `evolve.per_date_excess` accept a precomputed `score`.
+  - First run (2026-09-27): all three were REJECTED. H1 and H3 lost on 2023–Feb 2026 but won on Feb–Sep 2026, in every list for H3. That points to a momentum-to-mean-reversion regime flip rather than a stable structural edge.
 - **Self-improving loop** (autoresearch pattern, built natively rather than on Hermes Agent):
   - `journal.py` and `python main.py journal backfill|grade|report`:
     - Every sector scan logs its calls. Trending and Emerging themes should beat SPY over 20 trading days, and Breaking themes should lag it.
