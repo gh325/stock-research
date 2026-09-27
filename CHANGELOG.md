@@ -7,6 +7,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **S&P 500 replay universe** (`--watchlists sp500` for `experiment`, `--watchlist sp500` for `evolve`):
+  - The replay covers the current constituents, with about 500 names per date.
+  - It refuses to run if ingest fell back to its hard-coded S&P 100.
+  - Replays are cached per universe, settings and day in `data/replay_cache/` (git-ignored). `evolve` gained `--period`.
+  - First S&P 500 run (2026-09-27, 5y; 493 tickers, a median of 463 per date):
+    - All five hypotheses were REJECTED, and every one did worse than the current score on the holdout. H3 was −2.13% (t = −1.9).
+    - `evolve` was FAIL: its train gain of +0.55% vanished on the holdout (−0.03%).
+    - The current score's own edge: +0.43% per 10 days over 4 years (t = 1.34, not significant). The train window (Oct 2022–Jul 2025) was 0.00%, Jul–Dec 2025 was +2.61% and 2026 was +0.59%.
+    - The watchlists' negative 2026 results are specific to those themes. The broad market was flat, not negative.
+- **Regime-switch hypotheses and 5-year replay** (`experiment --period 5y`):
+  - Registered before any 5-year result was seen:
+    - R1 (breadth switch): uses H1 when fewer than 50% of the list trade above their 200 SMA.
+    - R2 (factor-momentum switch): inverts the ranking when the current score lagged over its last 12 known replay dates. It is lagged 3 dates, and a test checks for no look-ahead.
+  - `compare` now scores the full history before splitting, so regime features can cross the train/holdout boundary.
+  - First 5-year run (2026-09-27; replay dates Oct 2022–Sep 2026, holdout from Jul 2025): all five hypotheses were REJECTED.
+    - H3 (fade) lost badly on `ai_ecosystem` over the longer holdout (−3.81%, t = −2.8), so the 3-year "fade wins" result was the last 7 months only.
+    - R2 was active on 20–66% of holdout dates and still added nothing.
+    - R1 rarely triggered after mid-2025, except on cyber.
+  - Conclusion: no tested structural change beats the current score robustly.
+- **Structural experiments** (`experiments.py`, `python main.py experiment`):
+  - Three pre-registered hypotheses, each compared with the current score on the evolve replay:
+    - H1: a stretch penalty above +25% over the 200 SMA.
+    - H2: momentum rebuilt from the 52-week position only.
+    - H3: the ranking inverted, as a control.
+  - PASS on a list needs both a train gain and a holdout gain with t ≥ 2. ADOPT needs a PASS on ≥ 3 of 4 lists.
+  - The replay now also stores `sma200_pct`, `ret5d_pct` and `week52_pos`. `evolve.evaluate` and `evolve.per_date_excess` accept a precomputed `score`.
+  - First run (2026-09-27): all three were REJECTED. H1 and H3 lost on 2023–Feb 2026 but won on Feb–Sep 2026, in every list for H3. That points to a momentum-to-mean-reversion regime flip rather than a stable structural edge.
 - **Self-improving loop** (autoresearch pattern, built natively rather than on Hermes Agent):
   - `journal.py` and `python main.py journal backfill|grade|report`:
     - Every sector scan logs its calls. Trending and Emerging themes should beat SPY over 20 trading days, and Breaking themes should lag it.
@@ -82,7 +109,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added PSNL (biotech), and CRGY and CLMT (energy): trending benchmark holdings.
 
 ### Fixed
-- **`backtest` crashed on a fresh install** (`no such table: recommendations`). The journal can create the DB with only its own table. `backtest` now calls `tracker.init_db()` before querying, and regression tests cover a DB without the table and a missing DB.
+- **`backtest` crashed on a fresh install** (`no such table: recommendations`). The journal can create the DB with only its own table. `backtest` now calls `tracker.init_db()` before querying, and regression tests cover a DB without the table and a missing DB. feat/self-improving-loop
 - **`backtest` never found any picks**: it read `data/tracker.db`, but the tracker writes `config.DB_PATH` (`data/paper_trades.db`). It now reads `config.DB_PATH`, and a test guards it.
 - Removed dead code that ruff flagged: 6 unused imports and 2 unused variables.
 - **Long-term profitability gate**: a name now also needs `profitMargins > 0`. A positive forward P/E alone let NET (-8% margin), SAIL and TXG into the 1-year list.

@@ -145,3 +145,36 @@ def test_apply_refuses_a_failed_run(tmp_path) -> None:
     with pytest.raises(ValueError):
         evolve.apply({"verdict": "FAIL"}, {}, params_path=tmp_path / "p.json",
                      log_path=tmp_path / "l.jsonl")
+
+
+# ── Universes and the replay cache ───────────────────────────────────────────
+
+def test_sp500_universe_uses_the_index_list(monkeypatch) -> None:
+    import ingest
+    monkeypatch.setattr(ingest, "_get_sp500_tickers", lambda: [f"T{i}" for i in range(503)])
+    assert len(evolve.universe_tickers("sp500")) == 503
+    assert evolve.universe_tickers("cyber") == ingest.load_watchlist("cyber")
+
+
+def test_sp500_universe_refuses_the_silent_sp100_fallback(monkeypatch) -> None:
+    # ingest falls back to a hard-coded S&P 100 when Wikipedia fails. A
+    # replay labelled "sp500" must never quietly run on 100 names.
+    import ingest
+    monkeypatch.setattr(ingest, "_get_sp500_tickers", lambda: [f"T{i}" for i in range(100)])
+    with pytest.raises(RuntimeError):
+        evolve.universe_tickers("sp500")
+
+
+def test_replay_cache_builds_once_per_day(monkeypatch, tmp_path) -> None:
+    calls = []
+    def fake_build(tickers, horizon, step, period):
+        calls.append(period)
+        return _features(None, n_dates=3)
+    monkeypatch.setattr(evolve, "build_features", fake_build)
+    monkeypatch.setattr(evolve, "universe_tickers", lambda name: ["A", "B"])
+    monkeypatch.setattr(evolve, "CACHE_DIR", tmp_path)
+    a = evolve.load_features("cyber", horizon=10, step=5, period="5y")
+    b = evolve.load_features("cyber", horizon=10, step=5, period="5y")
+    evolve.load_features("cyber", horizon=10, step=5, period="3y")   # different key
+    assert calls == ["5y", "3y"]
+    pd.testing.assert_frame_equal(a, b)

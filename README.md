@@ -241,6 +241,36 @@ Limits:
 - The replay uses today's watchlist, so it has survivorship bias. It also models
   no trading costs.
 
+### Experiment: test structural changes to the score
+
+```bash
+python main.py experiment                         # H1–H3 on the 4 main watchlists
+python main.py experiment --watchlists cyber,energy
+python main.py experiment --period 5y              # longer replay (dates from ~4 years back)
+python main.py experiment --watchlists sp500 --period 5y   # ~500 names per date
+```
+
+`sp500` works for `evolve` too. Each replay is cached for the day in
+`data/replay_cache/` (git-ignored), so `experiment` and `evolve` can share one.
+If the S&P 500 list can't be fetched, the replay stops. It does not quietly run on
+the S&P 100 fallback.
+
+`evolve` tunes the weights. `experiment` tests changes to the score's *shape*.
+Each hypothesis is pre-registered in `experiments.py`, with settings fixed in
+advance. It is compared with the current score on the same replay. The registered
+hypotheses are:
+
+- H1–H3: fixed shape changes.
+- R1 and R2: regime switches. R1 uses breadth; R2 uses the score's own lagged
+  track record, with no look-ahead, which a test checks.
+
+- **PASS on one list:** it beats the current score on train *and* on the
+  holdout, with t ≥ 2.
+- **ADOPT_CANDIDATE:** it passes on at least 3 of 4 lists.
+
+A candidate is never switched on automatically. Adopting one is a reviewed code
+change.
+
 ## Example Output (truncated)
 
 ```
@@ -478,6 +508,7 @@ against the data.
 | `sector_scan.py` | Pre-run sector rotation scan (trending / emerging / breaking themes) |
 | `journal.py` | Research journal: logs the scan's calls and grades them against real returns |
 | `evolve.py` | Self-improving loop for the technical weights, with a holdout gate |
+| `experiments.py` | Pre-registered structural hypotheses for the score, gated per list and across lists |
 | `params/scoring.json` | Technical sub-weights (loaded by `config.py`, changed only by `evolve --apply`) |
 | `watchlist_check.py` | Pre-run watchlist health check (market, theme, technicals, earnings, news, trending) |
 | `backtest.py` | Replay saved recs vs actual prices + SPY benchmark |

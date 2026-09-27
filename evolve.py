@@ -31,12 +31,14 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
-from config import BASE_DIR, MIN_AVG_VOLUME, MIN_PRICE, PARAMS_PATH
+from config import BASE_DIR, DATA_DIR, MIN_AVG_VOLUME, MIN_PRICE, PARAMS_PATH
 
 logger  = logging.getLogger(__name__)
 console = Console(width=160)
 
-LOG_PATH = BASE_DIR / "params" / "evolution_log.jsonl"
+LOG_PATH  = BASE_DIR / "params" / "evolution_log.jsonl"
+CACHE_DIR = DATA_DIR / "replay_cache"     # git-ignored; one replay per universe per day
+SP500_MIN = 400                          # fewer means ingest fell back to its S&P 100 list
 
 COMPONENTS        = ["rsi", "macd", "trend", "volume", "momentum"]
 TOP_N             = 5      # picks per replay date, same as the swing table
@@ -58,25 +60,29 @@ def _score(features: pd.DataFrame, weights: dict[str, float]) -> pd.Series:
     return sum(features[f"{c}_score"] * weights[c] for c in COMPONENTS)
 
 
-def per_date_excess(features: pd.DataFrame, weights: dict[str, float],
-                    top_n: int = TOP_N) -> pd.Series:
+def per_date_excess(features: pd.DataFrame, weights: dict[str, float] | None,
+                    top_n: int = TOP_N, score: pd.Series | None = None) -> pd.Series:
     """
     For each date: mean forward return of the top-N picks minus the universe
     mean. Dates with fewer than MIN_TICKERS tickers are skipped, because their
     top N is most of the universe and the excess would be ~0 by construction.
+    Pass `score` (aligned to `features`) to rank by a structural variant
+    instead of the weighted sum.
     """
     counts = features.groupby("date")["ticker"].transform("nunique")
-    df = features[counts >= max(MIN_TICKERS, 2 * top_n)]
-    df = df.assign(_s=_score(df, weights))
+    keep   = counts >= max(MIN_TICKERS, 2 * top_n)
+    df = features[keep]
+    df = df.assign(_s=(score[keep] if score is not None else _score(df, weights)))
     top  = (df.sort_values("_s", ascending=False).groupby("date").head(top_n)
               .groupby("date")["fwd_ret"].mean())
     univ = df.groupby("date")["fwd_ret"].mean()
     return (top - univ).dropna()
 
 
-def evaluate(features: pd.DataFrame, weights: dict[str, float], top_n: int = TOP_N) -> dict:
+def evaluate(features: pd.DataFrame, weights: dict[str, float] | None, top_n: int = TOP_N,
+             score: pd.Series | None = None) -> dict:
     """Mean excess return (% per horizon), hit rate and t-stat over replay dates."""
-    ex = per_date_excess(features, weights, top_n)
+    ex = per_date_excess(features, weights, top_n, score)
     n  = len(ex)
     sd = float(ex.std(ddof=1)) if n > 1 else 0.0
     return {
@@ -157,6 +163,33 @@ def run_evolution(features: pd.DataFrame, baseline: dict[str, float],
 
 # ── Replay data (network) ────────────────────────────────────────────────────
 
+def universe_tickers(name: str) -> list[str]:
+    """
+    Tickers for a replay universe: a watchlist file name, or "sp500" for the
+    current S&P 500 constituents (from Wikipedia, via ingest).
+    """
+    import ingest
+    if name != "sp500":
+        return ingest.load_watchlist(name)
+    tickers = ingest._get_sp500_tickers()
+    if len(tickers) < SP500_MIN:
+        raise RuntimeError(f"S&P 500 list has only {len(tickers)} names. ingest fell back to its "
+                           f"hard-coded S&P 100, so the replay would be mislabelled. Try again later.")
+    return tickers
+
+
+def load_features(name: str, horizon: int = 10, step: int = 5, period: str = "3y") -> pd.DataFrame:
+    """Replay table for a universe, built at most once per day per settings (cached)."""
+    from datetime import date
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    path = CACHE_DIR / f"{name}_{period}_h{horizon}_s{step}_{date.today().isoformat()}.pkl"
+    if path.exists():
+        return pd.read_pickle(path)
+    features = build_features(universe_tickers(name), horizon=horizon, step=step, period=period)
+    features.to_pickle(path)
+    return features
+
+
 def build_features(tickers: list[str], horizon: int = 10, step: int = 5,
                    period: str = "3y") -> pd.DataFrame:
     """
@@ -212,6 +245,10 @@ def features_from_frames(frames: dict[str, pd.DataFrame], horizon: int = 10,
                 "date":   d,
                 "ticker": t,
                 **{f"{c}_score": tech[f"{c}_score"] for c in COMPONENTS},
+                # Raw fields for structural hypotheses (experiments.py)
+                "sma200_pct": (tech["last_price"] / tech["sma200"] - 1) * 100 if tech["sma200"] else 0.0,
+                "ret5d_pct":  tech["ret5d_pct"],
+                "week52_pos": tech["week52_pos"],
                 "fwd_ret": (float(close.iloc[pos + horizon]) / float(close.iloc[pos]) - 1) * 100,
             })
     return pd.DataFrame(rows)
@@ -276,15 +313,15 @@ def render(result: dict, context: dict) -> None:
 
 
 def run(watchlist: str, horizon: int = 10, step: int = 5, iterations: int = 40,
-        seed: int = 0, do_apply: bool = False) -> dict:
+        seed: int = 0, do_apply: bool = False, period: str = "3y") -> dict:
     """CLI entry: replay, evolve, report, and apply only on PASS + --apply."""
-    import ingest
     from config import load_tech_weights
 
     context  = {"watchlist": watchlist, "horizon": horizon, "step": step,
-                "iterations": iterations, "seed": seed}
-    console.print(f"[bold]Replaying {watchlist}[/bold] ({horizon}d forward, every {step} days) …")
-    features = build_features(ingest.load_watchlist(watchlist), horizon=horizon, step=step)
+                "iterations": iterations, "seed": seed, "period": period}
+    console.print(f"[bold]Replaying {watchlist}[/bold] ({horizon}d forward, every {step} days, "
+                  f"{period}) …")
+    features = load_features(watchlist, horizon=horizon, step=step, period=period)
     result   = run_evolution(features, load_tech_weights(), iterations=iterations, seed=seed)
     render(result, context)
     if do_apply:
