@@ -24,6 +24,7 @@ import yfinance as yf
 from rich.console import Console
 from rich.table import Table
 
+import tracker
 from config import DB_PATH
 
 logger  = logging.getLogger(__name__)
@@ -36,9 +37,10 @@ def run_backtest(days_forward: int = 5, since_days: int = 30) -> None:
     each pick's price `days_forward` later was higher (hit) or lower (miss).
     Compares against SPY's same-period return.
     """
-    if not DB_PATH.exists():
-        console.print(f"[yellow]No tracker DB at {DB_PATH} — run the pipeline first.[/yellow]")
-        return
+    # The tracker owns this schema. Create its tables if they are missing: on a
+    # fresh install the journal may have created the DB file with only its
+    # own `predictions` table.
+    tracker.init_db()
 
     conn = sqlite3.connect(DB_PATH)
     cutoff = (datetime.today() - timedelta(days=since_days)).strftime("%Y-%m-%d")
@@ -54,7 +56,8 @@ def run_backtest(days_forward: int = 5, since_days: int = 30) -> None:
     conn.close()
 
     if not rows:
-        console.print(f"[yellow]No recommendations in the last {since_days} days.[/yellow]")
+        console.print(f"[yellow]No recommendations in the last {since_days} days — "
+                      f"run the pipeline first.[/yellow]")
         return
 
     console.rule(f"[bold blue]Backtest — last {since_days}d, {days_forward}d forward window")
