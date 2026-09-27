@@ -826,7 +826,9 @@ def _build_parser() -> argparse.ArgumentParser:
     # evolve
     evo_p = sub.add_parser("evolve", help="Self-improving loop: propose technical-weight changes, "
                                           "keep only those that pass a holdout test")
-    evo_p.add_argument("--watchlist",  default="ai_ecosystem", help="Watchlist to replay (default ai_ecosystem)")
+    evo_p.add_argument("--watchlist",  default="ai_ecosystem",
+                       help="Watchlist to replay, or 'sp500' for the index (default ai_ecosystem)")
+    evo_p.add_argument("--period",     default="3y", help="Price history to replay, e.g. 3y or 5y (default 3y)")
     evo_p.add_argument("--horizon",    type=int, default=10, help="Forward window in trading days (default 10)")
     evo_p.add_argument("--step",       type=int, default=5,  help="Days between replay dates (default 5)")
     evo_p.add_argument("--iterations", type=int, default=40, help="Changes to try (default 40)")
@@ -838,7 +840,7 @@ def _build_parser() -> argparse.ArgumentParser:
     ex_p = sub.add_parser("experiment", help="Test pre-registered structural changes to the score "
                                              "(holdout-gated, must hold on 3 of 4 watchlists)")
     ex_p.add_argument("--watchlists", default="ai_ecosystem,cyber,biotech,energy",
-                      help="Comma-separated watchlists (default: the 4 main lists)")
+                      help="Comma-separated watchlists, or 'sp500' (default: the 4 main lists)")
     ex_p.add_argument("--horizon", type=int, default=10, help="Forward window in trading days (default 10)")
     ex_p.add_argument("--period", default="3y", help="Price history to replay, e.g. 3y or 5y (default 3y)")
 
@@ -905,7 +907,8 @@ def main() -> None:
     elif args.command == "evolve":
         import evolve
         evolve.run(args.watchlist, horizon=args.horizon, step=args.step,
-                   iterations=args.iterations, seed=args.seed, do_apply=args.apply)
+                   iterations=args.iterations, seed=args.seed, do_apply=args.apply,
+                   period=args.period)
     elif args.command == "experiment":
         import experiments
         experiments.run([w.strip() for w in args.watchlists.split(",") if w.strip()],

@@ -31,12 +31,14 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
-from config import BASE_DIR, MIN_AVG_VOLUME, MIN_PRICE, PARAMS_PATH
+from config import BASE_DIR, DATA_DIR, MIN_AVG_VOLUME, MIN_PRICE, PARAMS_PATH
 
 logger  = logging.getLogger(__name__)
 console = Console(width=160)
 
-LOG_PATH = BASE_DIR / "params" / "evolution_log.jsonl"
+LOG_PATH  = BASE_DIR / "params" / "evolution_log.jsonl"
+CACHE_DIR = DATA_DIR / "replay_cache"     # git-ignored; one replay per universe per day
+SP500_MIN = 400                          # fewer means ingest fell back to its S&P 100 list
 
 COMPONENTS        = ["rsi", "macd", "trend", "volume", "momentum"]
 TOP_N             = 5      # picks per replay date, same as the swing table
@@ -161,6 +163,33 @@ def run_evolution(features: pd.DataFrame, baseline: dict[str, float],
 
 # ── Replay data (network) ────────────────────────────────────────────────────
 
+def universe_tickers(name: str) -> list[str]:
+    """
+    Tickers for a replay universe: a watchlist file name, or "sp500" for the
+    current S&P 500 constituents (from Wikipedia, via ingest).
+    """
+    import ingest
+    if name != "sp500":
+        return ingest.load_watchlist(name)
+    tickers = ingest._get_sp500_tickers()
+    if len(tickers) < SP500_MIN:
+        raise RuntimeError(f"S&P 500 list has only {len(tickers)} names. ingest fell back to its "
+                           f"hard-coded S&P 100, so the replay would be mislabelled. Try again later.")
+    return tickers
+
+
+def load_features(name: str, horizon: int = 10, step: int = 5, period: str = "3y") -> pd.DataFrame:
+    """Replay table for a universe, built at most once per day per settings (cached)."""
+    from datetime import date
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    path = CACHE_DIR / f"{name}_{period}_h{horizon}_s{step}_{date.today().isoformat()}.pkl"
+    if path.exists():
+        return pd.read_pickle(path)
+    features = build_features(universe_tickers(name), horizon=horizon, step=step, period=period)
+    features.to_pickle(path)
+    return features
+
+
 def build_features(tickers: list[str], horizon: int = 10, step: int = 5,
                    period: str = "3y") -> pd.DataFrame:
     """
@@ -284,15 +313,15 @@ def render(result: dict, context: dict) -> None:
 
 
 def run(watchlist: str, horizon: int = 10, step: int = 5, iterations: int = 40,
-        seed: int = 0, do_apply: bool = False) -> dict:
+        seed: int = 0, do_apply: bool = False, period: str = "3y") -> dict:
     """CLI entry: replay, evolve, report, and apply only on PASS + --apply."""
-    import ingest
     from config import load_tech_weights
 
     context  = {"watchlist": watchlist, "horizon": horizon, "step": step,
-                "iterations": iterations, "seed": seed}
-    console.print(f"[bold]Replaying {watchlist}[/bold] ({horizon}d forward, every {step} days) …")
-    features = build_features(ingest.load_watchlist(watchlist), horizon=horizon, step=step)
+                "iterations": iterations, "seed": seed, "period": period}
+    console.print(f"[bold]Replaying {watchlist}[/bold] ({horizon}d forward, every {step} days, "
+                  f"{period}) …")
+    features = load_features(watchlist, horizon=horizon, step=step, period=period)
     result   = run_evolution(features, load_tech_weights(), iterations=iterations, seed=seed)
     render(result, context)
     if do_apply:

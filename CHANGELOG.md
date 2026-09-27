@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **S&P 500 replay universe** (`--watchlists sp500` for `experiment`, `--watchlist sp500` for `evolve`):
+  - The replay covers the current constituents, with about 500 names per date.
+  - It refuses to run if ingest fell back to its hard-coded S&P 100.
+  - Replays are cached per universe, settings and day in `data/replay_cache/` (git-ignored). `evolve` gained `--period`.
+  - First S&P 500 run (2026-09-27, 5y; 493 tickers, a median of 463 per date):
+    - All five hypotheses were REJECTED, and every one did worse than the current score on the holdout. H3 was −2.13% (t = −1.9).
+    - `evolve` was FAIL: its train gain of +0.55% vanished on the holdout (−0.03%).
+    - The current score's own edge: +0.43% per 10 days over 4 years (t = 1.34, not significant). The train window (Oct 2022–Jul 2025) was 0.00%, Jul–Dec 2025 was +2.61% and 2026 was +0.59%.
+    - The watchlists' negative 2026 results are specific to those themes. The broad market was flat, not negative.
 - **Regime-switch hypotheses and 5-year replay** (`experiment --period 5y`):
   - Registered before any 5-year result was seen:
     - R1 (breadth switch): uses H1 when fewer than 50% of the list trade above their 200 SMA.
@@ -100,6 +109,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added PSNL (biotech), and CRGY and CLMT (energy): trending benchmark holdings.
 
 ### Fixed
+- **`experiment` result files overwrote each other**: the name used only the date and period, so an `sp500` run replaced the 4-list CSV. The name now includes the lists: `experiment_<date>_<lists>_<period>.csv`.
 - **`backtest` never found any picks**: it read `data/tracker.db`, but the tracker writes `config.DB_PATH` (`data/paper_trades.db`). It now reads `config.DB_PATH`, and a test guards it.
 - Removed dead code that ruff flagged: 6 unused imports and 2 unused variables.
 - **Long-term profitability gate**: a name now also needs `profitMargins > 0`. A positive forward P/E alone let NET (-8% margin), SAIL and TXG into the 1-year list.

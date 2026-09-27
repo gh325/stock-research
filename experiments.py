@@ -20,6 +20,7 @@ code change that puts it behind a flag in params/scoring.json.
 
   python main.py experiment                      # all hypotheses, 4 watchlists
   python main.py experiment --watchlists cyber,energy
+  python main.py experiment --watchlists sp500 --period 5y   # ~500 names per date
 """
 import logging
 from datetime import date
@@ -39,6 +40,8 @@ console = Console(width=160)
 DEFAULT_WATCHLISTS = ["ai_ecosystem", "cyber", "biotech", "energy"]
 MIN_PASS_FRAC      = 0.75   # pass on >= 3 of 4 lists
 MIN_LISTS          = 3      # never adopt on fewer lists than this
+# Note: an S&P 500-only run (one list) always REJECTs under MIN_LISTS. Read it
+# as the strongest single test. Adoption still needs the cross-list rule.
 
 # Pre-registered settings. Do not tune these to the results.
 STRETCH_FROM    = 25.0      # H1: penalty starts at +25% above the 200 SMA
@@ -146,7 +149,6 @@ def overall(per_list: list[dict]) -> str:
 
 def run(watchlists: list[str] | None = None, horizon: int = 10, step: int = 5,
         period: str = "3y") -> pd.DataFrame:
-    import ingest
     from config import load_tech_weights
 
     if int(np.ceil(horizon / step)) >= FACTOR_LAG:
@@ -157,16 +159,20 @@ def run(watchlists: list[str] | None = None, horizon: int = 10, step: int = 5,
     rows = []
     for wl in watchlists:
         console.print(f"[bold]Replaying {wl}[/bold] …")
-        feats = evolve.build_features(ingest.load_watchlist(wl), horizon=horizon, step=step,
-                                      period=period)
+        feats = evolve.load_features(wl, horizon=horizon, step=step, period=period)
         for name in HYPOTHESES:
             rows.append({"watchlist": wl, **compare(feats, name, weights)})
     df = pd.DataFrame(rows)
     render(df, horizon, period)
-    path = OUTPUT_DIR / f"experiment_{date.today().isoformat()}_{period}.csv"
+    path = result_path(watchlists, period)
     df.round(4).to_csv(path, index=False)
     console.print(f"  [dim]Saved {path.name}[/dim]\n")
     return df
+
+
+def result_path(watchlists: list[str], period: str):
+    """output/experiment_<date>_<lists>_<period>.csv: one file per run setup, never shared."""
+    return OUTPUT_DIR / f"experiment_{date.today().isoformat()}_{'-'.join(watchlists)}_{period}.csv"
 
 
 def render(df: pd.DataFrame, horizon: int, period: str = "3y") -> None:

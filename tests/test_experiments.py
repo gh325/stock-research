@@ -131,3 +131,10 @@ def test_compare_scores_on_the_full_history_before_splitting() -> None:
     # Regime features need history that crosses the train/holdout boundary.
     res = experiments.compare(_features("stretch", n_dates=120), "R2_factor_momentum_switch", W)
     assert res["n_holdout"] > 0 and "holdout_gain" in res
+
+
+def test_result_file_name_identifies_the_lists() -> None:
+    # Regression: an sp500 run overwrote the 4-list run's CSV (same date + period).
+    a = experiments.result_path(["ai_ecosystem", "cyber", "biotech", "energy"], "5y")
+    b = experiments.result_path(["sp500"], "5y")
+    assert a != b and "sp500" in b.name and b.name.endswith("_5y.csv")

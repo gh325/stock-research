@@ -247,7 +247,13 @@ Limits:
 python main.py experiment                         # H1–H3 on the 4 main watchlists
 python main.py experiment --watchlists cyber,energy
 python main.py experiment --period 5y              # longer replay (dates from ~4 years back)
+python main.py experiment --watchlists sp500 --period 5y   # ~500 names per date
 ```
+
+`sp500` works for `evolve` too. Each replay is cached for the day in
+`data/replay_cache/` (git-ignored), so `experiment` and `evolve` can share one.
+If the S&P 500 list can't be fetched, the replay stops. It does not quietly run on
+the S&P 100 fallback.
 
 `evolve` tunes the weights. `experiment` tests changes to the score's *shape*.
 Each hypothesis is pre-registered in `experiments.py`, with settings fixed in
