@@ -1,0 +1,56 @@
+# ═══════════════════════════════════════════════════════════════════
+# Biotech & genomics watchlist
+# Theme: M&A wave, obesity, gene editing, sequencing / diagnostics
+#
+# Biotech warning: single names gap 30–70% on trial data or FDA
+# decisions. Size smaller than tech names with the same ATR.
+#
+# Usage:
+#   python main.py run --watchlist biotech --watchlist-only --stocks-only
+#   python main.py check-watchlist biotech
+# ═══════════════════════════════════════════════════════════════════
+# sector_cap: off
+# benchmark: XBI, IBB, ARKG
+
+# ── Large-cap biotech (profitable) ──────────────────────────────────
+AMGN   # Amgen
+VRTX   # Vertex — cystic fibrosis, pain
+GILD   # Gilead — HIV, oncology
+REGN   # Regeneron
+ALNY   # Alnylam — RNAi
+# removed 2026-09-27: ARGX (argenx) - avg volume under 500k, pipeline drops it
+BIIB   # Biogen
+INCY   # Incyte
+UTHR   # United Therapeutics
+NBIX   # Neurocrine
+BMRN   # BioMarin
+
+# ── Obesity / metabolic ─────────────────────────────────────────────
+LLY    # Eli Lilly — GLP-1 leader
+NVO    # Novo Nordisk (ADR)
+VKTX   # Viking — obesity pipeline, unprofitable
+# removed 2026-09-27: MDGL (Madrigal) - avg volume under 500k, pipeline drops it
+
+# ── Mid / small-cap pipeline (binary-event risk) ────────────────────
+MRNA   # Moderna — unprofitable
+RVMD   # Revolution Medicines — RAS oncology, unprofitable
+INSM   # Insmed — respiratory
+HALO   # Halozyme — drug-delivery royalties
+EXEL   # Exelixis — oncology
+IONS   # Ionis — antisense
+SRPT   # Sarepta — gene therapy
+KYMR   # Kymera — protein degraders
+CYTK   # Cytokinetics — cardiology
+
+# ── Genomics, sequencing, diagnostics ───────────────────────────────
+NTRA   # Natera — cell-free DNA testing
+ILMN   # Illumina — sequencing
+TWST   # Twist Bioscience — synthetic DNA
+TXG    # 10x Genomics — single-cell
+CRSP   # CRISPR Therapeutics — gene editing
+BEAM   # Beam — base editing
+NTLA   # Intellia — gene editing
+TEM    # Tempus AI — AI diagnostics
+GRAL   # GRAIL — cancer screening
+CDNA   # CareDx — transplant diagnostics
+PSNL   # Personalis — cancer genomics, unprofitable (added 2026-09-27: trending ARKG holding)

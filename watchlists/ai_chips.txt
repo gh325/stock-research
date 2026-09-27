@@ -1,0 +1,62 @@
+# AI / Robotics / Memory / Data-Center watchlist
+# One ticker per line. # for comments. Blank lines OK.
+# Used by: python main.py run --watchlist ai_chips
+#                  or:  --watchlist ai_chips --watchlist-only
+# benchmark: SMH, SOXX
+
+# ── AI Compute & GPUs ────────────────────────────────────────
+NVDA
+AMD
+INTC
+AVGO
+ARM
+
+# ── Memory & Storage ─────────────────────────────────────────
+MU
+SNDK
+WDC
+STX
+
+# ── Semi Equipment (the bottlenecks — sell to all chip makers) ──
+AMAT
+LRCX
+KLAC
+
+# ── Specialty Semis & Communications ─────────────────────────
+QCOM
+MRVL
+ADI
+TXN
+ON
+
+# ── Servers & Custom Compute ─────────────────────────────────
+SMCI
+DELL
+HPE
+
+# ── Mega-Cap AI Platforms ────────────────────────────────────
+AAPL
+MSFT
+GOOGL
+META
+
+# ── AI Software & Cloud ──────────────────────────────────────
+PLTR
+SNOW
+DDOG
+NOW
+
+# ── Data-Center Power & Cooling ──────────────────────────────
+NRG
+VST
+CEG
+VRT
+NVT
+
+# ── Robotics & Industrial Automation ─────────────────────────
+ROK
+ETN
+EMR
+TER
+COHR
+IPGP

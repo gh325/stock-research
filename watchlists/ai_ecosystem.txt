@@ -1,0 +1,145 @@
+# ═══════════════════════════════════════════════════════════════════
+# AI / Robotics / Quantum / Space — Full Ecosystem Watchlist
+# Covers: OpenAI partners, Anthropic partners, AI infra, AI software,
+#         Robotics, Quantum computing, Space, and all dependent supply chains
+#
+# Usage:
+#   python main.py run --watchlist ai_ecosystem
+#   python main.py run --watchlist ai_ecosystem --watchlist-only
+# ═══════════════════════════════════════════════════════════════════
+# benchmark: SMH, AIQ, BOTZ
+
+
+# ── OpenAI Ecosystem ──────────────────────────────────────────────────
+# Companies with confirmed OpenAI contracts, partnerships, or supply chain
+MSFT     # Azure — primary OpenAI cloud partner, 49% stake
+ORCL     # Oracle cloud — major OpenAI inference partner (100k GPU deal)
+CRWV     # CoreWeave — GPU cloud built for OpenAI (IPO Mar 2025)
+DELL     # servers for OpenAI data centers
+SMCI     # Super Micro — AI server supply chain for OpenAI
+HPE      # Hewlett Packard — enterprise AI infra
+NVDA     # GPUs — powers every OpenAI training run
+ALAB     # Astera Labs — PCIe/CXL connectivity inside OpenAI clusters
+
+
+# ── Anthropic Ecosystem ───────────────────────────────────────────────
+# AWS is Anthropic's primary cloud; Google is secondary strategic investor
+AMZN     # AWS — Anthropic's primary cloud + $4B investment
+GOOGL    # GCP + Gemini AI + $2B Anthropic stake
+AVGO     # custom ASICs — supply chain for both Google and AWS AI
+MU       # HBM memory — inside every Anthropic/Google AI accelerator
+EQIX     # Equinix — data center colos used by AWS/GCP for AI
+DLR      # Digital Realty — data center REIT
+
+
+# ── AI Chips & Custom Silicon ─────────────────────────────────────────
+# From raw compute to custom ASICs to edge inference
+AMD      # MI300X GPUs — NVIDIA alternative for LLM inference
+ARM      # architecture for 95% of mobile + growing AI/edge chips
+MRVL     # Marvell — custom AI ASICs + DPUs + networking (NVIDIA-backed)
+QCOM     # Qualcomm — edge AI, on-device inference (Snapdragon)
+TSM      # TSMC ADR — manufactures 90%+ of advanced AI chips
+INTC     # Intel — Gaudi AI accelerators, foundry services
+META     # Meta — trains Llama on own AI infra, custom MTIA chips
+
+
+# ── AI Memory — the HBM shortage bottleneck ───────────────────────────
+SNDK     # SanDisk (NAND) — storage for AI training data
+WDC      # Western Digital — NAND + HDD for AI storage
+STX      # Seagate — HDDs for AI data lakes
+P        # Pure Storage (ticker changed from PSTG Apr 2026) — all-flash
+
+
+# ── AI Networking & Data Center Fabric ───────────────────────────────
+ANET     # Arista — spine/leaf switching inside every AI cluster
+NET      # Cloudflare — AI inference at edge, Workers AI platform
+
+
+# ── AI Power & Cooling — the invisible AI bottleneck ─────────────────
+# Every AI GPU draws 700W+. Power/cooling is the new chip shortage.
+VRT      # Vertiv — liquid cooling + power distribution for AI racks
+NVT      # nVent — power management enclosures
+ETN      # Eaton — power quality and UPS for data centers
+GEV      # GE Vernova — gas turbines and grid equipment for AI campuses
+CEG      # Constellation Energy — nuclear power (Microsoft deal 3 Mile Island)
+VST      # Vistra — power generation (data center demand)
+NRG      # NRG Energy — power for hyperscale AI
+NEE      # NextEra Energy — largest clean energy provider
+BE       # Bloom Energy — fuel cells for data center backup power
+PWR      # Quanta Services — electrical grid construction
+STRL     # Sterling Infrastructure — data center construction
+
+
+# ── AI Semi Equipment — make the chips that make AI possible ──────────
+AMAT     # Applied Materials — deposition/etch for every advanced chip
+LRCX     # Lam Research — etch and deposition
+KLAC     # KLA Corp — process control and inspection
+ONTO     # Onto Innovation — metrology for advanced nodes
+ACMR     # ACM Research — wafer cleaning (TSMC supplier)
+TSEM     # Tower Semiconductor — analog/mixed-signal foundry
+
+
+# ── AI Optical & Photonics — the bandwidth backbone ──────────────────
+# AI clusters need terabits/sec of optical I/O between GPUs
+COHR     # Coherent — 800G/1.6T transceivers for AI data centers
+LITE     # Lumentum — optical components
+MTSI     # MACOM Technology — RF/microwave semi components
+AAOI     # Applied Optoelectronics — small-cap optical transceiver play
+
+
+# ── AI Software, Platforms & Applications ─────────────────────────────
+PLTR     # Palantir — AI for government, defense, enterprise (AIP platform)
+NOW      # ServiceNow — AI workflow automation across enterprise
+CRM      # Salesforce — Einstein AI, Agentforce platform
+SNOW     # Snowflake — AI data cloud, Cortex AI
+DDOG     # Datadog — AI observability and monitoring
+PATH     # UiPath — AI-powered RPA/automation
+AI       # C3.ai — enterprise AI applications
+MDB      # MongoDB — document store for AI apps
+CRWD     # CrowdStrike — AI-native cybersecurity (Charlotte AI)
+ZS       # Zscaler — AI-driven zero trust security
+GTLB     # GitLab — AI DevSecOps platform
+WDAY     # Workday — AI for HR/finance workflows
+HUBS     # HubSpot — AI-powered CRM
+
+
+# ── Robotics & Autonomous Systems ────────────────────────────────────
+# Humanoids, surgical, warehouse, industrial, unmanned — the physical AI layer
+TSLA     # Tesla Optimus humanoid robot + FSD autonomous driving
+ISRG     # Intuitive Surgical — da Vinci surgical robots (dominant moat)
+TER      # Teradyne — Universal Robots collaborative robots + semiconductor test
+CGNX     # Cognex — machine vision systems (eyes of every robot)
+SYM      # Symbotic — AI-powered warehouse robotics (Walmart, Target)
+ROK      # Rockwell Automation — factory automation + digital twins
+HON      # Honeywell — industrial automation + Quantinuum quantum
+EMR      # Emerson Electric — process automation
+FTV      # Fortive — precision test and measurement
+# removed 2026-09-27: ABB (ADR) and BRKS (Brooks Automation) - no price data from Yahoo
+KTOS     # Kratos Defense — unmanned aerial systems, autonomous defense
+
+
+# ── Quantum Computing ─────────────────────────────────────────────────
+# Early stage but the next compute paradigm — size accordingly (small positions)
+IONQ     # IonQ — trapped ion, most commercially advanced pure-play
+RGTI     # Rigetti Computing — superconducting qubits
+QBTS     # D-Wave Quantum — quantum annealing, first commercial quantum
+QUBT     # Quantum Computing Inc — photonic quantum
+IBM      # IBM Quantum — largest quantum network, also AI/cloud
+
+
+# ── Space & Satellite Economy ─────────────────────────────────────────
+# SpaceX (private) is the category driver — these are the public plays
+RKLB     # Rocket Lab — launch + spacecraft manufacturing (SpaceX competitor)
+ASTS     # AST SpaceMobile — space-based cellular (replaces ground towers)
+LUNR     # Intuitive Machines — NASA lunar lander contracts
+RDW      # Redwire Space — space manufacturing, solar arrays, structures
+PL       # Planet Labs — 200-satellite earth observation constellation
+BKSY     # BlackSky Technology — real-time geospatial intelligence
+SPIR     # Spire Global — maritime, aviation, weather data from space
+IRDM     # Iridium Communications — satellite IoT and L-band connectivity
+GSAT     # Globalstar — satellite comms (Apple Emergency SOS partner)
+VSAT     # ViaSat — broadband satellite (military + commercial)
+LMT      # Lockheed Martin — F-35, satellites, hypersonics, space systems
+NOC      # Northrop Grumman — B-21, space systems, missile defense
+RTX      # RTX (Raytheon) — missiles, radar, space electronics
+BA       # Boeing — Starliner (CST-100), space launch systems

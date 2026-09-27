@@ -1,0 +1,61 @@
+[project]
+name = "stock-research"
+version = "1.0.0"
+description = "Quantitative stock screener for paper trading: intraday, swing and long-term tables, sector rotation scan and watchlist health checks."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Jayant Naphade" }]
+keywords = ["stocks", "screener", "technical-analysis", "paper-trading", "yfinance"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Education",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Office/Business :: Financial :: Investment",
+]
+# Same bounds as requirements.txt. numpy stays below 2 and pandas below 3
+# because the ta library and our indicators are tested on those majors.
+dependencies = [
+    "yfinance>=0.2.50",
+    "pandas>=2.0.0,<3.0.0",
+    "numpy>=1.24.0,<2.0.0",
+    "ta~=0.11",
+    "vaderSentiment~=3.3",
+    "APScheduler~=3.10",
+    "requests~=2.31",
+    "feedparser~=6.0",
+    "python-dotenv~=1.0",
+    "rich>=13.0.0",
+    "lxml>=4.9.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest~=8.0",
+    "ruff~=0.6",
+]
+
+# Flat module layout (main.py, scorer.py, ...): uv manages the environment
+# but does not build or install the project as a package.
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py310"
+extend-exclude = [".venv", "output", "data", "logs"]
+
+[tool.ruff.lint]
+# Ruff defaults (pyflakes + core pycodestyle). The codebase aligns `=` in
+# blocks on purpose, so whitespace-style rules stay off.
+select = ["E4", "E7", "E9", "F"]
+ignore = [
+    "E701",  # aligned one-line `if x: score += n` blocks are house style
+    "E741",  # `h, l, cp` (high, low, prev close) in the true-range formula
+]

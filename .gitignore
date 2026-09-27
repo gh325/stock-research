@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets - only .env.example is committed
+.env
+.env.local
+
+# Personal runtime data - never publish
+data/*.db
+data/*.pkl
+data/tickers.json
+output/
+logs/
+*.log
+
+# Backups - never commit archives
+*.tar.gz
+*.tar.gz.sha256
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

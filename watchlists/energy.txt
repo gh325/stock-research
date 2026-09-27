@@ -1,0 +1,66 @@
+# ═══════════════════════════════════════════════════════════════════
+# Energy watchlist
+# Theme: oil supply shock (Hormuz / Red Sea), refining margins,
+#        tanker rates, US natural gas / LNG
+#
+# Energy warning: this theme is event-driven. A ceasefire or a
+# reopened shipping lane can reverse it within days.
+#
+# Usage:
+#   python main.py run --watchlist energy --watchlist-only --stocks-only
+#   python main.py check-watchlist energy
+# ═══════════════════════════════════════════════════════════════════
+# sector_cap: off
+# benchmark: XLE, XOP, OIH
+
+# ── Integrated majors ───────────────────────────────────────────────
+XOM    # Exxon Mobil
+CVX    # Chevron
+SU     # Suncor (Canada)
+CNQ    # Canadian Natural (Canada)
+
+# ── US oil E&P ──────────────────────────────────────────────────────
+COP    # ConocoPhillips
+EOG    # EOG Resources
+OXY    # Occidental
+DVN    # Devon
+FANG   # Diamondback
+APA    # APA Corp
+PR     # Permian Resources
+# removed 2026-09-27: CTRA (Coterra) - no price data from Yahoo
+CRGY   # Crescent Energy — E&P roll-up (added 2026-09-27: trending XOP holding)
+
+# ── Natural gas / LNG ───────────────────────────────────────────────
+EQT    # EQT — Appalachian gas
+EXE    # Expand Energy
+AR     # Antero Resources
+LNG    # Cheniere — LNG exporter
+
+# ── Refiners ────────────────────────────────────────────────────────
+MPC    # Marathon Petroleum
+PSX    # Phillips 66
+VLO    # Valero
+PBF    # PBF Energy
+DINO   # HF Sinclair
+CLMT   # Calumet — specialty refiner, unprofitable (added 2026-09-27: trending XOP holding)
+
+# ── Oilfield services & offshore drilling ───────────────────────────
+SLB    # SLB
+HAL    # Halliburton
+BKR    # Baker Hughes
+FTI    # TechnipFMC
+NOV    # NOV
+RIG    # Transocean
+VAL    # Valaris
+
+# ── Midstream ───────────────────────────────────────────────────────
+WMB    # Williams
+KMI    # Kinder Morgan
+OKE    # ONEOK
+TRGP   # Targa
+
+# ── Tankers (shipping-lane disruption) ──────────────────────────────
+FRO    # Frontline — crude tankers
+STNG   # Scorpio Tankers — product tankers
+DHT    # DHT Holdings — VLCCs
+INSW   # International Seaways

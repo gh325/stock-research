@@ -1,0 +1,38 @@
+# ═══════════════════════════════════════════════════════════════════
+# Cybersecurity watchlist
+# Theme: AI-agent security, identity, cloud/network security, SecOps
+#
+# Usage:
+#   python main.py run --watchlist cyber --watchlist-only --stocks-only
+#   python main.py check-watchlist cyber
+# ═══════════════════════════════════════════════════════════════════
+# sector_cap: off
+# benchmark: CIBR, HACK, BUG
+
+# ── Platform leaders ────────────────────────────────────────────────
+PANW   # Palo Alto Networks — network + cloud + SecOps platform
+CRWD   # CrowdStrike — endpoint / XDR
+FTNT   # Fortinet — firewalls, SASE
+ZS     # Zscaler — zero-trust / SASE
+NET    # Cloudflare — edge network + security
+CHKP   # Check Point — firewalls
+
+# ── Identity & access ───────────────────────────────────────────────
+OKTA   # Okta — workforce + customer identity
+# removed 2026-09-27: CYBR (CyberArk) - no price data, acquired by PANW
+SAIL   # SailPoint — identity governance
+
+# ── SecOps, vuln mgmt, data security ────────────────────────────────
+S      # SentinelOne — endpoint, unprofitable
+QLYS   # Qualys — vulnerability management
+TENB   # Tenable — exposure management
+RPD    # Rapid7 — SecOps
+VRNS   # Varonis — data security
+RBRK   # Rubrik — backup / data security, unprofitable
+CVLT   # Commvault — data protection
+
+# ── Networking with security exposure ───────────────────────────────
+FFIV   # F5 — app delivery + security
+AKAM   # Akamai — CDN + security
+CSCO   # Cisco — Splunk owner
+GEN    # Gen Digital — consumer security
