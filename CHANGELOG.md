@@ -109,7 +109,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added PSNL (biotech), and CRGY and CLMT (energy): trending benchmark holdings.
 
 ### Fixed
-- **`backtest` crashed on a fresh install** (`no such table: recommendations`). The journal can create the DB with only its own table. `backtest` now calls `tracker.init_db()` before querying, and regression tests cover a DB without the table and a missing DB. feat/self-improving-loop
+- **`experiment` result files overwrote each other**: the name used only the date and period, so an `sp500` run replaced the 4-list CSV. The name now includes the lists: `experiment_<date>_<lists>_<period>.csv`.
+- **`backtest` crashed on a fresh install** (`no such table: recommendations`). The journal can create the DB with only its own table. `backtest` now calls `tracker.init_db()` before querying, and regression tests cover a DB without the table and a missing DB.
 - **`backtest` never found any picks**: it read `data/tracker.db`, but the tracker writes `config.DB_PATH` (`data/paper_trades.db`). It now reads `config.DB_PATH`, and a test guards it.
 - Removed dead code that ruff flagged: 6 unused imports and 2 unused variables.
 - **Long-term profitability gate**: a name now also needs `profitMargins > 0`. A positive forward P/E alone let NET (-8% margin), SAIL and TXG into the 1-year list.
