@@ -17,6 +17,7 @@ build/
 data/*.db
 data/*.pkl
 data/tickers.json
+data/replay_cache/
 output/
 logs/
 *.log

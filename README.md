@@ -195,6 +195,82 @@ python main.py monitor --watchlist ai_chips --interval 120      # 38 chips ticke
 
 ---
 
+## Self-Improving Loop
+
+Two tools check the screener against what actually happened, and change it
+only when the evidence holds up. This follows the "autoresearch" pattern:
+make one change, measure it, then keep it or revert it.
+
+### Research journal: do the sector scan's calls come true?
+
+```bash
+python main.py journal backfill   # grade ~2 years of scans from price history
+python main.py journal grade      # grade live calls whose 20-day window has passed
+python main.py journal report     # hit rate per bucket, with 95% ranges
+```
+
+Every sector scan logs its calls: Trending and Emerging themes should beat SPY
+over the next 20 trading days, and Breaking themes should lag it. Calls on the
+same ETF never overlap in time, so each one is independent evidence. A bucket
+is marked "works" only when its whole 95% range clears 50%.
+
+### Evolve: tune the technical weights, but only on evidence
+
+```bash
+python main.py evolve --watchlist ai_ecosystem          # propose, test, report
+python main.py evolve --watchlist ai_ecosystem --apply  # write the weights only on PASS
+```
+
+The loop works in five steps:
+
+1. It replays ~2 years of history on one shared calendar. It scores every ticker
+   as of each date, using only data up to that date.
+2. It moves 0.05 of weight between two components, one change at a time. It keeps
+   a change only if the top-5 picks improve on the training window.
+3. It gates once on a held-out recent window. The new weights must beat the
+   current ones there by t ≥ 2. On pure noise, this gate falsely passes about
+   2.5% of the time; `tests/test_evolve.py` checks that.
+4. `--apply` writes `params/scoring.json` and appends to
+   `params/evolution_log.jsonl`. Commit that on a branch and review it like code.
+5. The loop never edits code. Weights stay between 0.05 and 0.50.
+
+Limits:
+
+- It tunes technical weights only, because sentiment and fundamentals have no
+  history to replay.
+- The replay uses today's watchlist, so it has survivorship bias. It also models
+  no trading costs.
+
+### Experiment: test structural changes to the score
+
+```bash
+python main.py experiment                         # H1–H3 on the 4 main watchlists
+python main.py experiment --watchlists cyber,energy
+python main.py experiment --period 5y              # longer replay (dates from ~4 years back)
+python main.py experiment --watchlists sp500 --period 5y   # ~500 names per date
+```
+
+`sp500` works for `evolve` too. Each replay is cached for the day in
+`data/replay_cache/` (git-ignored), so `experiment` and `evolve` can share one.
+If the S&P 500 list can't be fetched, the replay stops. It does not quietly run on
+the S&P 100 fallback.
+
+`evolve` tunes the weights. `experiment` tests changes to the score's *shape*.
+Each hypothesis is pre-registered in `experiments.py`, with settings fixed in
+advance. It is compared with the current score on the same replay. The registered
+hypotheses are:
+
+- H1–H3: fixed shape changes.
+- R1 and R2: regime switches. R1 uses breadth; R2 uses the score's own lagged
+  track record, with no look-ahead, which a test checks.
+
+- **PASS on one list:** it beats the current score on train *and* on the
+  holdout, with t ≥ 2.
+- **ADOPT_CANDIDATE:** it passes on at least 3 of 4 lists.
+
+A candidate is never switched on automatically. Adopting one is a reviewed code
+change.
+
 ## Example Output (truncated)
 
 ```
@@ -430,6 +506,10 @@ against the data.
 | `report.py` | All table renderers + CSV/JSON/text file writers |
 | `macro.py` | SPY/VIX/DXY regime panel + thematic ETF benchmarks |
 | `sector_scan.py` | Pre-run sector rotation scan (trending / emerging / breaking themes) |
+| `journal.py` | Research journal: logs the scan's calls and grades them against real returns |
+| `evolve.py` | Self-improving loop for the technical weights, with a holdout gate |
+| `experiments.py` | Pre-registered structural hypotheses for the score, gated per list and across lists |
+| `params/scoring.json` | Technical sub-weights (loaded by `config.py`, changed only by `evolve --apply`) |
 | `watchlist_check.py` | Pre-run watchlist health check (market, theme, technicals, earnings, news, trending) |
 | `backtest.py` | Replay saved recs vs actual prices + SPY benchmark |
 | `tracker.py` | SQLite paper-trade log + recommendation history |

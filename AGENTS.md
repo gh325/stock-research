@@ -46,7 +46,11 @@ See `README.md` for the complete command reference and column dictionary.
 | `watchlists/ai_chips.txt` | 38 AI/chips/memory tickers |
 | `watchlists/ai_ecosystem.txt` | 90 tickers: OpenAI/Anthropic ecosystem, AI infra, Robotics, Quantum, Space |
 | `watchlists/cyber.txt`, `biotech.txt`, `energy.txt` | Sector watchlists (19 / 33 / 37 tickers) |
-| `sector_scan.py` | Pre-run sector rotation scan; runs before every `run` (`--skip-sector-scan` to skip) |
+| `sector_scan.py` | Pre-run sector rotation scan; runs before every `run` (`--skip-sector-scan` to skip). Logs its calls to the journal |
+| `journal.py` | `journal backfill/grade/report`: grades the scan's calls. Predictions table lives in `config.DB_PATH` |
+| `evolve.py` | `evolve [--apply]`: holdout-gated tuning of the technical weights. Never edits code |
+| `experiments.py` | `experiment`: pre-registered structural hypotheses (H1–H3). Settings are fixed, so never tune them to results. Adopting one means a reviewed code change |
+| `params/scoring.json` | Technical sub-weights. Change it only through `evolve --apply`, and commit on a branch |
 | `watchlist_check.py` | Advisory pre-run check; runs before every `--watchlist` run (`--skip-watchlist-check` to skip) |
 
 ---
