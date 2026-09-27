@@ -246,11 +246,17 @@ Limits:
 ```bash
 python main.py experiment                         # H1–H3 on the 4 main watchlists
 python main.py experiment --watchlists cyber,energy
+python main.py experiment --period 5y              # longer replay (dates from ~4 years back)
 ```
 
 `evolve` tunes the weights. `experiment` tests changes to the score's *shape*.
 Each hypothesis is pre-registered in `experiments.py`, with settings fixed in
-advance. It is compared with the current score on the same replay.
+advance. It is compared with the current score on the same replay. The registered
+hypotheses are:
+
+- H1–H3: fixed shape changes.
+- R1 and R2: regime switches. R1 uses breadth; R2 uses the score's own lagged
+  track record, with no look-ahead, which a test checks.
 
 - **PASS on one list:** it beats the current score on train *and* on the
   holdout, with t ≥ 2.

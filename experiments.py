@@ -43,6 +43,9 @@ MIN_LISTS          = 3      # never adopt on fewer lists than this
 # Pre-registered settings. Do not tune these to the results.
 STRETCH_FROM    = 25.0      # H1: penalty starts at +25% above the 200 SMA
 STRETCH_PER_PCT = 0.5       # H1: points removed per % beyond that
+BREADTH_NARROW  = 0.50      # R1: < 50% of the list above its 200 SMA = narrow market
+FACTOR_LOOKBACK = 12        # R2: judge the score on its last 12 replay dates (~3 months)
+FACTOR_LAG      = 3         # R2: skip the newest 3 dates; their 10-day outcomes are not yet known
 
 
 # ── Hypotheses (pure) ────────────────────────────────────────────────────────
@@ -63,6 +66,30 @@ def _h3_mean_reversion(f: pd.DataFrame, w: dict[str, float]) -> pd.Series:
     return -evolve._score(f, w)
 
 
+def _r1_breadth_switch(f: pd.DataFrame, w: dict[str, float]) -> pd.Series:
+    """
+    Regime by breadth, using the same-date cross-section only. When most of
+    the list is below its 200 SMA (narrow leadership), stretched leaders are
+    fragile, so use H1. Otherwise use the current momentum score.
+    """
+    breadth = (f["sma200_pct"] > 0).groupby(f["date"]).transform("mean")
+    return _h1_stretch_penalty(f, w).where(breadth < BREADTH_NARROW, evolve._score(f, w))
+
+
+def _r2_factor_momentum_switch(f: pd.DataFrame, w: dict[str, float]) -> pd.Series:
+    """
+    Regime by the score's own track record ("factor momentum"). If the current
+    top-5 lagged the list over the last FACTOR_LOOKBACK replay dates whose
+    outcomes were already known, invert the ranking (H3). Otherwise keep it.
+    Look-ahead guard: date i sees only dates <= i - FACTOR_LAG.
+    """
+    base  = evolve._score(f, w)
+    ex    = evolve.per_date_excess(f, w).reindex(sorted(f["date"].unique()))
+    trail = ex.shift(FACTOR_LAG).rolling(FACTOR_LOOKBACK, min_periods=FACTOR_LOOKBACK).mean()
+    losing = f["date"].map(trail < 0).fillna(False).astype(bool)
+    return (-base).where(losing, base)
+
+
 HYPOTHESES = {
     "H1_stretch_penalty":     {"desc": f"−{STRETCH_PER_PCT} pt per % above +{STRETCH_FROM:.0f}% over 200 SMA",
                                "score": _h1_stretch_penalty},
@@ -70,6 +97,12 @@ HYPOTHESES = {
                                "score": _h2_no_short_term_chase},
     "H3_mean_reversion":      {"desc": "control: invert the current ranking",
                                "score": _h3_mean_reversion},
+    # Regime switches, registered 2026-09-27 before any 5-year result was seen
+    "R1_breadth_switch":      {"desc": f"H1 when < {BREADTH_NARROW:.0%} of list above 200 SMA, else current",
+                               "score": _r1_breadth_switch},
+    "R2_factor_momentum_switch": {"desc": f"invert when the score lagged over its last {FACTOR_LOOKBACK} "
+                                          f"known dates, else current",
+                                  "score": _r2_factor_momentum_switch},
 }
 
 
@@ -78,14 +111,17 @@ HYPOTHESES = {
 def compare(features: pd.DataFrame, name: str, weights: dict[str, float]) -> dict:
     """One hypothesis versus the current score on one replay table."""
     train, hold = evolve.split(features)
-    fn = HYPOTHESES[name]["score"]
+    # Score the full history once, then slice: regime features (R2) need a
+    # track record that crosses the train/holdout boundary. Every hypothesis
+    # uses only information available on its date, so this does not leak.
+    full = HYPOTHESES[name]["score"](features, weights)
     res: dict = {"hypothesis": name, "n_train": train.date.nunique(), "n_holdout": hold.date.nunique()}
     if res["n_train"] < evolve.MIN_TRAIN_DATES or res["n_holdout"] < evolve.MIN_HOLDOUT_DATES:
         return {**res, "verdict": "TOO_LITTLE_DATA", "train_gain": 0.0, "holdout_gain": 0.0,
                 "holdout_t": 0.0, "holdout_excess": 0.0, "baseline_holdout_excess": 0.0}
 
     def ex(part: pd.DataFrame, hyp: bool) -> pd.Series:
-        return evolve.per_date_excess(part, weights, score=fn(part, weights) if hyp else None)
+        return evolve.per_date_excess(part, weights, score=full.loc[part.index] if hyp else None)
 
     train_gain = float((ex(train, True) - ex(train, False)).mean())
     diff = (ex(hold, True) - ex(hold, False)).dropna()
@@ -108,28 +144,33 @@ def overall(per_list: list[dict]) -> str:
 
 # ── Runner (network) ─────────────────────────────────────────────────────────
 
-def run(watchlists: list[str] | None = None, horizon: int = 10, step: int = 5) -> pd.DataFrame:
+def run(watchlists: list[str] | None = None, horizon: int = 10, step: int = 5,
+        period: str = "3y") -> pd.DataFrame:
     import ingest
     from config import load_tech_weights
 
+    if int(np.ceil(horizon / step)) >= FACTOR_LAG:
+        raise ValueError(f"R2 needs outcomes known before use: ceil(horizon/step) must be "
+                         f"< FACTOR_LAG ({FACTOR_LAG}); got horizon={horizon}, step={step}")
     watchlists = watchlists or DEFAULT_WATCHLISTS
     weights    = load_tech_weights()
     rows = []
     for wl in watchlists:
         console.print(f"[bold]Replaying {wl}[/bold] …")
-        feats = evolve.build_features(ingest.load_watchlist(wl), horizon=horizon, step=step)
+        feats = evolve.build_features(ingest.load_watchlist(wl), horizon=horizon, step=step,
+                                      period=period)
         for name in HYPOTHESES:
             rows.append({"watchlist": wl, **compare(feats, name, weights)})
     df = pd.DataFrame(rows)
-    render(df, horizon)
-    path = OUTPUT_DIR / f"experiment_{date.today().isoformat()}.csv"
+    render(df, horizon, period)
+    path = OUTPUT_DIR / f"experiment_{date.today().isoformat()}_{period}.csv"
     df.round(4).to_csv(path, index=False)
     console.print(f"  [dim]Saved {path.name}[/dim]\n")
     return df
 
 
-def render(df: pd.DataFrame, horizon: int) -> None:
-    console.rule(f"[bold]Structural experiments vs current score ({horizon}d forward)")
+def render(df: pd.DataFrame, horizon: int, period: str = "3y") -> None:
+    console.rule(f"[bold]Structural experiments vs current score ({horizon}d forward, {period} history)")
     lists = list(dict.fromkeys(df.watchlist))
     tbl = Table(box=box.SIMPLE_HEAVY, show_edge=False)
     tbl.add_column("Hypothesis")

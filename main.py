@@ -840,6 +840,7 @@ def _build_parser() -> argparse.ArgumentParser:
     ex_p.add_argument("--watchlists", default="ai_ecosystem,cyber,biotech,energy",
                       help="Comma-separated watchlists (default: the 4 main lists)")
     ex_p.add_argument("--horizon", type=int, default=10, help="Forward window in trading days (default 10)")
+    ex_p.add_argument("--period", default="3y", help="Price history to replay, e.g. 3y or 5y (default 3y)")
 
     # journal
     jr_p = sub.add_parser("journal", help="Research journal: grade the sector scan's predictions")
@@ -908,7 +909,7 @@ def main() -> None:
     elif args.command == "experiment":
         import experiments
         experiments.run([w.strip() for w in args.watchlists.split(",") if w.strip()],
-                        horizon=args.horizon)
+                        horizon=args.horizon, period=args.period)
     elif args.command == "journal":
         import journal
         if args.action == "backfill":

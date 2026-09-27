@@ -87,3 +87,47 @@ def test_adoption_needs_three_of_four_lists() -> None:
     assert experiments.overall(results(3)) == "ADOPT_CANDIDATE"
     assert experiments.overall(results(2)) == "REJECT"
     assert experiments.overall([{"verdict": "PASS"}]) == "REJECT"   # one list is never enough
+
+
+# ── Regime switches (R1, R2) ─────────────────────────────────────────────────
+
+def test_breadth_switch_uses_penalty_only_on_narrow_dates() -> None:
+    feats = _features(None, n_dates=4)
+    feats.loc[feats.date == feats.date.min(), "sma200_pct"] = -10.0   # date 1: every name below 200 SMA
+    feats.loc[feats.date != feats.date.min(), "sma200_pct"] = 80.0    # others: broad and stretched
+    r1   = experiments.HYPOTHESES["R1_breadth_switch"]["score"](feats, W)
+    base = evolve._score(feats, W)
+    h1   = experiments.HYPOTHESES["H1_stretch_penalty"]["score"](feats, W)
+    narrow = feats.date == feats.date.min()
+    assert (r1[narrow] == h1[narrow]).all()       # narrow → penalty (no-op here, all below +25%)
+    assert (r1[~narrow] == base[~narrow]).all()   # broad → current score
+
+
+def test_factor_momentum_switch_has_no_look_ahead() -> None:
+    # Changing FUTURE forward returns must never change a PAST date's score.
+    feats = _features("stretch", n_dates=40)
+    fn    = experiments.HYPOTHESES["R2_factor_momentum_switch"]["score"]
+    before = fn(feats, W)
+    cut    = sorted(feats.date.unique())[25]
+    shocked = feats.copy()
+    shocked.loc[shocked.date >= cut, "fwd_ret"] *= -5
+    after = fn(shocked, W)
+    past = feats.date < cut
+    assert (before[past] == after[past]).all()
+
+
+def test_factor_momentum_switch_flips_after_the_score_has_been_losing() -> None:
+    # Make the current score's top picks lose on every early date: once that
+    # track record is known (lagged), the switch must invert the ranking.
+    feats = _features(None, n_dates=40)
+    base  = evolve._score(feats, W)
+    feats["fwd_ret"] = -(base - base.mean()) / 10
+    r2 = experiments.HYPOTHESES["R2_factor_momentum_switch"]["score"](feats, W)
+    late = feats.date > sorted(feats.date.unique())[experiments.FACTOR_LOOKBACK + experiments.FACTOR_LAG + 1]
+    assert (r2[late] == -base[late]).all()
+
+
+def test_compare_scores_on_the_full_history_before_splitting() -> None:
+    # Regime features need history that crosses the train/holdout boundary.
+    res = experiments.compare(_features("stretch", n_dates=120), "R2_factor_momentum_switch", W)
+    assert res["n_holdout"] > 0 and "holdout_gain" in res

@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Regime-switch hypotheses and 5-year replay** (`experiment --period 5y`):
+  - Registered before any 5-year result was seen:
+    - R1 (breadth switch): uses H1 when fewer than 50% of the list trade above their 200 SMA.
+    - R2 (factor-momentum switch): inverts the ranking when the current score lagged over its last 12 known replay dates. It is lagged 3 dates, and a test checks for no look-ahead.
+  - `compare` now scores the full history before splitting, so regime features can cross the train/holdout boundary.
+  - First 5-year run (2026-09-27; replay dates Oct 2022–Sep 2026, holdout from Jul 2025): all five hypotheses were REJECTED.
+    - H3 (fade) lost badly on `ai_ecosystem` over the longer holdout (−3.81%, t = −2.8), so the 3-year "fade wins" result was the last 7 months only.
+    - R2 was active on 20–66% of holdout dates and still added nothing.
+    - R1 rarely triggered after mid-2025, except on cyber.
+  - Conclusion: no tested structural change beats the current score robustly.
 - **Structural experiments** (`experiments.py`, `python main.py experiment`):
   - Three pre-registered hypotheses, each compared with the current score on the evolve replay:
     - H1: a stretch penalty above +25% over the 200 SMA.
