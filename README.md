@@ -1,5 +1,6 @@
 # Stock Research Pipeline
 
+[![CI](https://github.com/gh325/stock-research/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gh325/stock-research/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 
@@ -38,7 +39,7 @@ paper trading.
 With [uv](https://docs.astral.sh/uv/) (recommended):
 
 ```bash
-git clone <repo-url> stock-research
+git clone git@github.com:gh325/stock-research.git
 cd stock-research
 uv sync
 ```
