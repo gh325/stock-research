@@ -7,6 +7,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Self-improving loop** (autoresearch pattern, built natively rather than on Hermes Agent):
+  - `journal.py` and `python main.py journal backfill|grade|report`:
+    - Every sector scan logs its calls. Trending and Emerging themes should beat SPY over 20 trading days, and Breaking themes should lag it.
+    - The journal grades the calls and reports hit rates with 95% Wilson intervals.
+    - Calls on the same ETF never overlap in time, so each one is independent evidence.
+  - `evolve.py` and `python main.py evolve [--apply]`:
+    - Replays about 2 years of technical sub-scores on one shared calendar and proposes one weight change at a time.
+    - Keeps a change only if it improves train, then gates once on a recent holdout window (t ≥ 2, which falsely passes about 2.5% on noise and is tested).
+    - `--apply` writes `params/scoring.json` and appends `params/evolution_log.jsonl`. It never edits code.
+  - `params/scoring.json`: the technical sub-weights moved out of `config.py`. The values are unchanged.
+- First real results (2026-09-27):
+  - The scan's buckets show no proven edge: 52% / 51% / 48% hit rates, all within the coin-flip range.
+  - On `ai_ecosystem`, the current top-5 technical picks lagged the watchlist by 2.66% per 10 days over Feb–Sep 2026.
+  - `evolve` rejected the weights it found as overfit (holdout t = 0.48).
 - **Open-source readiness:**
   - Added an MIT `LICENSE`, `CONTRIBUTING.md` and `.gitignore`. The ignore file keeps `data/`, `output/`, `logs/`, `.env` and archives out of git.
   - Added `pyproject.toml` and `uv.lock`, with a uv dev group for pytest and ruff.
@@ -68,6 +82,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added PSNL (biotech), and CRGY and CLMT (energy): trending benchmark holdings.
 
 ### Fixed
+- **`backtest` never found any picks**: it read `data/tracker.db`, but the tracker writes `config.DB_PATH` (`data/paper_trades.db`). It now reads `config.DB_PATH`, and a test guards it.
 - Removed dead code that ruff flagged: 6 unused imports and 2 unused variables.
 - **Long-term profitability gate**: a name now also needs `profitMargins > 0`. A positive forward P/E alone let NET (-8% margin), SAIL and TXG into the 1-year list.
 - **200-day SMA was really the 50-day SMA**: `LOOKBACK_DAYS` was 90 calendar days (about 62 trading days), so `technicals` fell back to the 50 SMA for every "200 SMA" and computed the 52-week range over 62 days. It is now 400 calendar days (about 275 trading days). The price cache file name now includes the lookback (`prices_400d.pkl`), so a short-history cache is never reused. This changes trend scores, the long-term gate and all rankings.

@@ -37,12 +37,37 @@ DOWNLOAD_BATCH_SIZE = 100  # tickers per yfinance batch request
 WEIGHT_TECHNICAL = 0.60
 WEIGHT_SENTIMENT = 0.40
 
-# Sub-weights within the technical score
-TECH_WEIGHT_RSI      = 0.20   # Relative Strength Index — momentum
-TECH_WEIGHT_MACD     = 0.25   # MACD — trend-following momentum
-TECH_WEIGHT_TREND    = 0.25   # Price vs moving averages — trend direction
-TECH_WEIGHT_VOLUME   = 0.15   # Volume vs 20-day avg — institutional interest
-TECH_WEIGHT_MOMENTUM = 0.15   # 52-week position + recent return
+# Sub-weights within the technical score. They live in params/scoring.json so
+# `python main.py evolve` can propose changes without touching code. These
+# defaults apply only if that file is missing.
+PARAMS_PATH = BASE_DIR / "params" / "scoring.json"
+DEFAULT_TECH_WEIGHTS = {
+    "rsi":      0.20,   # Relative Strength Index — momentum
+    "macd":     0.25,   # MACD — trend-following momentum
+    "trend":    0.25,   # Price vs moving averages — trend direction
+    "volume":   0.15,   # Volume vs 20-day avg — institutional interest
+    "momentum": 0.15,   # 52-week position + recent return
+}
+
+
+def load_tech_weights(path: Path = PARAMS_PATH) -> dict[str, float]:
+    """Technical sub-weights from params/scoring.json, validated to sum to 1."""
+    import json
+    if not path.exists():
+        return dict(DEFAULT_TECH_WEIGHTS)
+    weights = json.loads(path.read_text())["tech_weights"]
+    if set(weights) != set(DEFAULT_TECH_WEIGHTS) or abs(sum(weights.values()) - 1) > 1e-6:
+        raise ValueError(f"{path}: tech_weights must have keys "
+                         f"{sorted(DEFAULT_TECH_WEIGHTS)} and sum to 1.0")
+    return {k: float(v) for k, v in weights.items()}
+
+
+_TECH_WEIGHTS        = load_tech_weights()
+TECH_WEIGHT_RSI      = _TECH_WEIGHTS["rsi"]
+TECH_WEIGHT_MACD     = _TECH_WEIGHTS["macd"]
+TECH_WEIGHT_TREND    = _TECH_WEIGHTS["trend"]
+TECH_WEIGHT_VOLUME   = _TECH_WEIGHTS["volume"]
+TECH_WEIGHT_MOMENTUM = _TECH_WEIGHTS["momentum"]
 
 # ── Scheduler ────────────────────────────────────────────────────────────────
 SCHEDULE_HOUR   = 21   # 9:00 PM local time (after US market close)

@@ -1,0 +1,10 @@
+{
+  "_comment": "Technical sub-weights (must sum to 1.0). Loaded by config.py. Proposed changes come from `python main.py evolve`; every applied change is logged in params/evolution_log.jsonl.",
+  "tech_weights": {
+    "rsi": 0.20,
+    "macd": 0.25,
+    "trend": 0.25,
+    "volume": 0.15,
+    "momentum": 0.15
+  }
+}

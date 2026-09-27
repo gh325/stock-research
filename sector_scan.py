@@ -16,7 +16,8 @@ policy, macro) is left to a human or to the /stock-research skill's web
 research step.
 
 Runs before every `python main.py run` (skip with --skip-sector-scan) or
-alone with `python main.py sectors`. Never blocks the run.
+alone with `python main.py sectors`. Never blocks the run. Each scan's calls
+are logged to the research journal (journal.py) and graded once they mature.
 """
 import logging
 from datetime import date
@@ -205,11 +206,14 @@ def save(result: dict) -> str:
 
 
 def run_scan() -> dict | None:
-    """scan + render + save. Never raises — a failed scan must not block a run."""
+    """scan + render + save + journal. Never raises — a failed scan must not block a run."""
     try:
         result = scan()
         render(result)
         save(result)
+        # Log today's calls so `journal grade` can score them later
+        import journal
+        journal.record_live(result)
         return result
     except Exception as exc:
         logger.warning(f"Sector scan failed: {exc}")

@@ -1,7 +1,7 @@
 """
 backtest.py — Validate recommendations against what actually happened.
 
-Pulls saved recommendations from `tracker.db` and fetches each stock's actual
+Pulls saved recommendations from the tracker DB (config.DB_PATH) and fetches each stock's actual
 closing price N days later. Reports:
   - Hit rate (% of picks that were UP after N days)
   - Average return per pick
@@ -24,12 +24,10 @@ import yfinance as yf
 from rich.console import Console
 from rich.table import Table
 
-from config import DATA_DIR
+from config import DB_PATH
 
 logger  = logging.getLogger(__name__)
 console = Console()
-
-DB_PATH = DATA_DIR / "tracker.db"
 
 
 def run_backtest(days_forward: int = 5, since_days: int = 30) -> None:

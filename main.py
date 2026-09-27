@@ -14,6 +14,9 @@ Usage:
   RECOMMENDED DAILY:
   python main.py run --no-cache --watchlist ai_ecosystem --watchlist-only --stocks-only
 
+  python main.py evolve --watchlist ai_ecosystem     Self-improving loop: try weight changes,
+                                                     keep only holdout-tested ones (--apply)
+  python main.py journal backfill|grade|report       Grade the sector scan's predictions
   python main.py sectors                             Sector rotation scan (runs before
                                                      every run; skip with --skip-sector-scan)
   python main.py check-watchlist cyber               Health-check a watchlist (runs
@@ -819,6 +822,22 @@ def _build_parser() -> argparse.ArgumentParser:
     # sectors
     sub.add_parser("sectors", help="Sector rotation scan: trending, emerging and breaking themes")
 
+    # evolve
+    evo_p = sub.add_parser("evolve", help="Self-improving loop: propose technical-weight changes, "
+                                          "keep only those that pass a holdout test")
+    evo_p.add_argument("--watchlist",  default="ai_ecosystem", help="Watchlist to replay (default ai_ecosystem)")
+    evo_p.add_argument("--horizon",    type=int, default=10, help="Forward window in trading days (default 10)")
+    evo_p.add_argument("--step",       type=int, default=5,  help="Days between replay dates (default 5)")
+    evo_p.add_argument("--iterations", type=int, default=40, help="Changes to try (default 40)")
+    evo_p.add_argument("--seed",       type=int, default=0,  help="Random seed, for reproducible runs")
+    evo_p.add_argument("--apply", action="store_true",
+                       help="Write params/scoring.json if, and only if, the verdict is PASS")
+
+    # journal
+    jr_p = sub.add_parser("journal", help="Research journal: grade the sector scan's predictions")
+    jr_p.add_argument("action", choices=["backfill", "grade", "report"])
+    jr_p.add_argument("--weeks", type=int, default=104, help="backfill: weeks of history (default 104)")
+
     # check-watchlist
     chk_p = sub.add_parser("check-watchlist",
                            help="Health-check a watchlist (market, theme, technicals, earnings, news, trending)")
@@ -874,6 +893,18 @@ def main() -> None:
     elif args.command == "sectors":
         import sector_scan
         sector_scan.run_scan()
+    elif args.command == "evolve":
+        import evolve
+        evolve.run(args.watchlist, horizon=args.horizon, step=args.step,
+                   iterations=args.iterations, seed=args.seed, do_apply=args.apply)
+    elif args.command == "journal":
+        import journal
+        if args.action == "backfill":
+            console.print(f"Backfilling {args.weeks} weeks of sector-scan calls …")
+            journal.backfill(weeks=args.weeks)
+        elif args.action == "grade":
+            console.print(f"Graded {journal.grade()} predictions.")
+        journal.render_report()
     elif args.command == "check-watchlist":
         import watchlist_check
         watchlist_check.run_check(args.name)
